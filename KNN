@@ -1,0 +1,41 @@
+import pandas as pd 
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+import seaborn as sns
+from sklearn.model_selection import train_test_split, cross_validate
+from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import StandardScaler
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.metrics import precision_score, recall_score, confusion_matrix,f1_score, accuracy_score, classification_report, roc_auc_score, plot_confusion_matrix
+
+
+
+dataset = pd.read_csv('Chess games stats.csv')
+print(len(dataset))
+print(dataset.head())
+print(dataset.tail())
+print(dataset.columns)
+
+
+
+mappings = list()
+encoder = LabelEncoder()
+for column in range(len(dataset.columns)):
+    dataset[dataset.columns[column]] = encoder.fit_transform(dataset[dataset.columns[column]])
+    mappings_dict = {index: label for index, label in enumerate(encoder.classes_)}
+    mappings.append(mappings_dict)
+    
+a = dataset.drop("Opening ECO",axis=1)
+b = dataset["Opening Ply"]
+a_train, a_test, b_train, b_test = train_test_split(a, b , shuffle =True,test_size=0.25,random_state=42)
+
+
+KNN = KNeighborsClassifier()
+KNN.fit(a_train,b_train)
+
+
+predKNN = KNN.predict(a_test)
+reportKNN = classification_report(b_test,predKNN, output_dict = True)
+crKNN = pd.DataFrame(reportKNN).transpose()
+print(crKNN)
