@@ -1,0 +1,68 @@
+#imports
+import pandas as pd
+import numpy as np
+import math
+from sklearn.model_selection import train_test_split
+def tt_split(X, y, test_size=1/3):
+    i = int((1 - test_size) * X.shape[0])
+    o = np.random.permutation(X.shape[0])
+    X_train, X_test = np.split(np.take(X, o, axis=0), [i])
+    y_train, y_test = np.split(np.take(y, o), [i])
+    return X_train, X_test, y_train, y_test
+
+def gradient_descent(learning_rate, iterations, X, Y, theta_1, m, n, theta_0):
+    for i in range(iterations):
+        [learning_rate, iterations, X, Y, theta_1, m, n, theta_0] = update_weights(learning_rate, iterations, X, Y, theta_1, m, n, theta_0)
+    return [learning_rate, iterations, X, Y, theta_1, m, n, theta_0]
+
+def update_weights(learning_rate, iterations, X, Y, theta_1, m, n, theta_0):
+    g = 1 / (1 + np.exp(- (theta_0 + X.dot(theta_1))))
+    error = (g - Y.T)
+    error = np.reshape(error, m)
+    theta_0_gradient = np.sum(error)
+    theta_1_gradient = np.sum(np.dot(X.T, error))
+    tmp_theta_0 = theta_0 - learning_rate * theta_0_gradient
+    tmp_theta_1 = theta_1 - learning_rate * theta_1_gradient
+
+    error = 0
+    h = tmp_theta_0 + X.dot(tmp_theta_1)
+    #for i in range(0, m):
+    #    error = -(1/m) * np.sum((Y * np.log(h)) + ((1 - Y * np.log(1 - h))))
+    error = -(1/m) * np.sum((Y * np.log(h)) + ((1 - Y * np.log(1 - h))))
+    #print(error)
+    return [learning_rate, iterations, X, Y, tmp_theta_1, m, n, tmp_theta_0]
+
+def predict(X, theta_1, theta_0):
+    g = 1 / (1 + np.exp(- (theta_0 + X.dot(theta_1))))
+    Y_predicted = np.where(g > 0.5, 1, 0)
+    return Y_predicted
+# read dataset
+df = pd.read_csv("Chess games stats.csv")
+print(df)
+X = df.iloc[:, :-1].values
+Y = df.iloc[:, -1:].values
+#normalization to x & y
+range_X = np.max(X) - np.min(X)
+X = (X-np.min(X))/range_X
+# Splitting dataset into train and test set
+X_train, X_test, Y_train, Y_test = tt_split(X, Y, test_size=1/3)# Model training
+learning_rate = 0.1
+iterations = 10000
+m, n = X_train.shape  # m = #_of_training_examples , n = #_of_features
+theta_1 = np.zeros(n)
+theta_0 = 0
+[learning_rate, iterations, X, Y, theta_1, m, n, theta_0] = gradient_descent(learning_rate, iterations, X_train, Y_train, theta_1, m, n, theta_0)
+# Prediction on test set
+Y_pred = predict(X_test,theta_1,theta_0)
+print("\ntesting data :\n")
+for i in range(0, len(Y_test)):
+    print("Y(Actual) = ",Y_test[i],"        Y(Predected) = ",Y_pred[i])
+print("\n")
+# measure accuracy
+correctly_classified = 0
+count = 0
+for count in range(np.size(Y_pred)):
+    if Y_test[count] == Y_pred[count]:
+        correctly_classified = correctly_classified + 1
+    count = count + 1
+print("Accuracy on test set by our model     :  ", (correctly_classified / count) * 100)
